@@ -1,5 +1,5 @@
           content:
-            'Сейчас я не могу получить ответ от ИИ. Проверь переменную OPENAI_API_KEY в Vercel и повтори запрос.',
+            'I cannot get an AI answer right now. Check OPENAI_API_KEY in Vercel and try again.',
         },
       ]);
     } finally {
@@ -20,7 +20,7 @@
 
   return (
     <main className="workspace">
-      <aside className="sidebar" aria-label="Навигация">
+      <aside className="sidebar" aria-label="Navigation">
         <div className="brand">
           <div className="brand__mark">
             <Bot size={22} />
@@ -33,7 +33,7 @@
 
         <button className="new-chat" onClick={startNewChat}>
           <Plus size={18} />
-          Жаңа сөйлесу
+          New chat
         </button>
 
         <nav className="menu">
@@ -50,22 +50,22 @@
 
         <div className="sidebar__status">
           <span />
-          Локальный веб-чат активен
+          Web chat is active
         </div>
       </aside>
 
       <section className="chat">
         <header className="chat__header">
           <div>
-            <span className="section-label">Контекстный помощник</span>
+            <span className="section-label">Context assistant</span>
             <h1>MSP AI Chat</h1>
           </div>
           <div className="header-actions">
-            <button aria-label="Статус API" title={apiReady ? 'API готов' : 'Нужен API-ключ'}>
+            <button aria-label="API status" title={apiReady ? 'API ready' : 'API key required'}>
               <CheckCircle2 size={18} />
               <span>{apiReady ? 'API' : 'Key'}</span>
             </button>
-            <button aria-label="Настройки" title="Настройки">
+            <button aria-label="Settings" title="Settings">
               <Settings size={18} />
             </button>
           </div>
@@ -76,10 +76,10 @@
             <div className="intro__icon">
               <Sparkles size={26} />
             </div>
-            <h2>Добро пожаловать</h2>
+            <h2>Welcome</h2>
             <p>
-              Этот интерфейс работает как ИИ-бот в браузере: отправляешь вопрос,
-              серверная функция Vercel обращается к модели и возвращает ответ.
+              This interface works like an AI bot in the browser: you send a question,
+              the Vercel server function calls the model and returns an answer.
             </p>
             <div className="suggestions">
               {suggestions.map((suggestion) => (
@@ -97,7 +97,7 @@
           {messages.map((message) => (
             <article className={`message message--${message.role}`} key={message.id}>
               <div className="avatar">
-                {message.role === 'assistant' ? <Zap size={16} /> : 'Вы'}
+                {message.role === 'assistant' ? <Zap size={16} /> : 'You'}
               </div>
               <div className="bubble">
                 {message.content.split('\n').map((line, index) => (
@@ -114,7 +114,7 @@
               </div>
               <div className="bubble bubble--loading">
                 <Loader2 size={18} />
-                ИИ думает...
+                AI is thinking...
               </div>
             </article>
           )}
@@ -133,10 +133,10 @@
                 sendMessage();
               }
             }}
-            placeholder="Отправить сообщение MSP AI..."
+            placeholder="Send a message to MSP AI..."
             rows="1"
           />
-          <button type="submit" disabled={isLoading || !input.trim()} aria-label="Отправить">
+          <button type="submit" disabled={isLoading || !input.trim()} aria-label="Send">
             {isLoading ? <Loader2 size={20} /> : <Send size={20} />}
           </button>
         </form>
