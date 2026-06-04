@@ -1,21 +1,12 @@
-const OPENAI_API_URL = 'https://api.openai.com/v1/responses';
-const DEFAULT_MODEL = 'gpt-4.1-mini';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
+const DEFAULT_MODEL = 'gemini-2.5-flash';
 
 function extractOutputText(data) {
-  if (typeof data.output_text === 'string' && data.output_text.trim()) {
-    return data.output_text.trim();
-  }
-
-  const chunks = [];
-  for (const item of data.output || []) {
-    for (const content of item.content || []) {
-      if (content.type === 'output_text' && content.text) {
-        chunks.push(content.text);
-      }
-    }
-  }
-
-  return chunks.join('\n').trim();
+  return (data.candidates || [])
+    .flatMap((candidate) => candidate.content?.parts || [])
+    .map((part) => part.text || '')
+    .join('\n')
+    .trim();
 }
 
 export default async function handler(req, res) {
@@ -23,53 +14,60 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Only POST requests are allowed.' });
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return res.status(500).json({
-      error: 'OPENAI_API_KEY is missing. Add it in Vercel Environment Variables.',
+      error: 'GEMINI_API_KEY is missing. Add it in Vercel Environment Variables.',
     });
   }
 
   const messages = Array.isArray(req.body?.messages) ? req.body.messages : [];
-  const cleanedMessages = messages
+  const contents = messages
     .filter((message) => message?.content && ['user', 'assistant'].includes(message.role))
     .slice(-12)
     .map((message) => ({
-      role: message.role,
-      content: String(message.content).slice(0, 4000),
+      role: message.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: String(message.content).slice(0, 4000) }],
     }));
 
-  if (!cleanedMessages.length) {
+  if (!contents.length) {
     return res.status(400).json({ error: 'Message is required.' });
   }
 
   try {
-    const openaiResponse = await fetch(OPENAI_API_URL, {
+    const model = process.env.GEMINI_MODEL || DEFAULT_MODEL;
+    const geminiResponse = await fetch(`${GEMINI_API_URL}/${model}:generateContent`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        'x-goog-api-key': apiKey,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: process.env.OPENAI_MODEL || DEFAULT_MODEL,
-        instructions:
-          'You are MSP AI, a helpful web assistant for students. Answer clearly in the language of the user. If the user asks for tables, format them in readable Markdown. Be practical, concise, and friendly.',
-        input: cleanedMessages,
-        max_output_tokens: 900,
+        systemInstruction: {
+          parts: [
+            {
+              text: 'You are MSP AI, a helpful web assistant for students. Answer clearly in the language of the user. If the user asks for tables, format them in readable Markdown. Be practical, concise, and friendly.',
+            },
+          ],
+        },
+        contents,
+        generationConfig: {
+          maxOutputTokens: 900,
+        },
       }),
     });
 
-    const data = await openaiResponse.json();
+    const data = await geminiResponse.json();
 
-    if (!openaiResponse.ok) {
-      return res.status(openaiResponse.status).json({
-        error: data.error?.message || 'OpenAI API request failed.',
+    if (!geminiResponse.ok) {
+      return res.status(geminiResponse.status).json({
+        error: data.error?.message || 'Gemini API request failed.',
       });
     }
 
     const answer = extractOutputText(data);
     return res.status(200).json({
-      answer: answer || 'Ответ пустой. Попробуй переформулировать вопрос.',
+      answer: answer || 'The answer is empty. Try rephrasing your question.',
     });
   } catch (error) {
     return res.status(500).json({
