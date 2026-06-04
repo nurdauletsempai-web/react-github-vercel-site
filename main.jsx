@@ -186,7 +186,8 @@ function App() {
           <Plus size={18} />
           Жаңа сөйлесу
         </button>
-<nav className="menu">
+
+        <nav className="menu">
           {sidebarItems.map((item) => {
             const Icon = item.icon;
             return (
